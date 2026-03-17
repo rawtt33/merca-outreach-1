@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Merca — Outreach Message Generator</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #0051E6;
+    --navy-dark: #003DB3;
+    --mint: #00F9A2;
+    --white: #ffffff;
+    --bg: #f7f8fc;
+    --card: #ffffff;
+    --border: #e2e6ef;
+    --border-focus: #0051E6;
+    --text: #111827;
+    --text-secondary: #6b7280;
+    --text-hint: #9ca3af;
+    --success: #059669;
+    --error-bg: #fef2f2;
+    --error-border: #fca5a5;
+    --error-text: #b91c1c;
+    --teal: #0F6E56;
+    --amber: #92400e;
+    --green: #065f46;
+    --lmint: #ecfdf5;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* TOP BAR */
+  .topbar {
+    background: var(--navy);
+    padding: 0 2rem;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .topbar-brand {
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: -0.01em;
+  }
+  .topbar-brand span {
+    color: var(--mint);
+  }
+  .topbar-sub {
+    font-size: 12px;
+    color: rgba(255,255,255,0.6);
+  }
+
+  /* API KEY BANNER */
+  .api-banner {
+    background: #fff8e1;
+    border-bottom: 1px solid #fdd835;
+    padding: 10px 2rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .api-banner p {
+    font-size: 13px;
+    color: #7c5c00;
+    flex: 1;
+    min-width: 200px;
+  }
+  .api-banner input {
+    flex: 2;
+    min-width: 240px;
+    padding: 7px 12px;
+    font-size: 13px;
+    border: 1px solid #fdd835;
+    border-radius: 8px;
+    background: #fff;
+    color: var(--text);
+    font-family: monospace;
+  }
+  .api-banner input:focus { outline: none; border-color: var(--navy); }
+  .api-saved {
+    font-size: 12px;
+    color: var(--success);
+    font-weight: 500;
+    display: none;
+  }
+
+  /* LAYOUT */
+  .container {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  /* CARDS */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .step-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1.25rem;
+  }
+  .step-num {
+    width: 24px;
+    height: 24px;
+    background: var(--navy);
+    color: #fff;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .step-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  /* FORM FIELDS */
+  .field { margin-bottom: 1.1rem; }
+  .field:last-child { margin-bottom: 0; }
+  .field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 5px;
+  }
+  .field .hint {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    line-height: 1.5;
+  }
+  .field input,
+  .field textarea {
+    width: 100%;
+    font-size: 14px;
+    color: var(--text);
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-family: inherit;
+    transition: border-color 0.15s;
+    resize: vertical;
+  }
+  .field input:focus,
+  .field textarea:focus {
+    outline: none;
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 3px rgba(0,81,230,0.08);
+  }
+  .field textarea { min-height: 80px; line-height: 1.6; }
+
+  .grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  @media (max-width: 540px) { .grid2 { grid-template-columns: 1fr; } }
+
+  /* PILLS */
+  .pills { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pill {
+    cursor: pointer;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 99px;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    background: transparent;
+    transition: all 0.12s;
+    user-select: none;
+    line-height: 1.4;
+  }
+  .pill:hover { border-color: #a0aec0; color: var(--text); }
+  .pill.active {
+    border-color: var(--navy);
+    color: var(--navy);
+    background: #e8f0fe;
+  }
+
+  /* BUTTONS */
+  .btn-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .btn {
+    padding: 10px 22px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+    font-family: inherit;
+    transition: all 0.12s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn:hover { background: var(--bg); }
+  .btn:active { transform: scale(0.98); }
+  .btn.primary {
+    background: var(--navy);
+    border-color: var(--navy);
+    color: #fff;
+    padding: 10px 28px;
+  }
+  .btn.primary:hover { background: var(--navy-dark); border-color: var(--navy-dark); }
+  .btn.primary:disabled {
+    background: #9ca3af;
+    border-color: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+  }
+  .btn.sm { padding: 7px 14px; font-size: 12px; }
+
+  /* SPINNER */
+  .spin {
+    width: 15px; height: 15px;
+    border: 2px solid rgba(255,255,255,0.35);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: rot 0.65s linear infinite;
+    display: inline-block;
+  }
+  @keyframes rot { to { transform: rotate(360deg); } }
+
+  /* OUTPUT */
+  .output-card {
+    background: var(--card);
+    border: 1.5px solid var(--navy);
+    border-radius: 14px;
+    padding: 1.5rem;
+    margin-top: 1.25rem;
+  }
+  .output-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .output-badge {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--navy);
+    background: #e8f0fe;
+    padding: 4px 10px;
+    border-radius: 99px;
+  }
+  .output-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .copy-btn {
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    background: #fff;
+    color: var(--text);
+    font-family: inherit;
+    transition: all 0.12s;
+  }
+  .copy-btn:hover { background: var(--bg); }
+  .copy-btn.copied { color: var(--success); border-color: #6ee7b7; background: #f0fdf4; }
+
+  .message-body {
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: #f9fafb;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.1rem;
+  }
+
+  .refine-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+  .refine-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    cursor: pointer;
+    background: #fff;
+    color: var(--text-secondary);
+    font-family: inherit;
+    transition: all 0.12s;
+  }
+  .refine-btn:hover { border-color: var(--navy); color: var(--navy); background: #e8f0fe; }
+
+  /* ERROR */
+  .error-box {
+    background: var(--error-bg);
+    border: 1px solid var(--error-border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--error-text);
+    margin-top: 1rem;
+  }
+
+  /* REQUIRED STAR */
+  .req { color: #dc2626; margin-left: 2px; }
+
+  /* FOOTER */
+  .footer {
+    text-align: center;
+    padding: 2rem;
+    font-size: 12px;
+    color: var(--text-hint);
+  }
+  .footer a { color: var(--navy); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-brand">Merca <span>·</span> Outreach Generator</div>
+  <div class="topbar-sub">Powered by Claude</div>
+</div>
+
+<div class="api-banner" id="api-banner">
+  <p>Enter your Anthropic API key to use this tool. It stays in your browser only.</p>
+  <input type="password" id="api-key-input" placeholder="sk-ant-..." autocomplete="off" oninput="saveKey()" />
+  <span class="api-saved" id="key-saved">Key saved</span>
+</div>
+
+<div class="container">
+
+  <!-- STEP 1: Brand Info -->
+  <div class="card">
+    <div class="step-header">
+      <div class="step-num">1</div>
+      <div class="step-title">Brand info</div>
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label>Brand name <span class="req">*</span></label>
+        <input type="text" id="brand-name" placeholder="e.g. Bombay Shirt Company" />
+      </div>
+      <div class="field">
+        <label>Website</label>
+        <input type="text" id="website" placeholder="e.g. bombayshirtcompany.com" />
+      </div>
+    </div>
+    <div class="field">
+      <label>Contact name</label>
+      <input type="text" id="contact-name" placeholder="e.g. Akshyat (founder)" />
+    </div>
+  </div>
+
+  <!-- STEP 2: Observations -->
+  <div class="card">
+    <div class="step-header">
+      <div class="step-num">2</div>
+      <div class="step-title">What you observed</div>
+    </div>
+
+    <div class="field">
+      <label>DPA / Ad observations <span class="req">*</span></label>
+      <div class="hint">Which ad did you click? Which product? What did you find on the landing page? (OOS sizes, buried product, broken availability)</div>
+      <textarea id="ad-obs" rows="4" placeholder="e.g. Clicked their Ivory Linen Slim Fit DPA ad on Meta. Landed on PDP — S, M, L all out of stock. Ad still running. Checked 2 more active DPA ads, same issue on 1 of them."></textarea>
+    </div>
+
+    <div class="field">
+      <label>Website / collection page observations</label>
+      <div class="hint">Sort order issues, OOS products at the top, campaign pages, anything you noticed browsing their store.</div>
+      <textarea id="site-obs" rows="3" placeholder="e.g. Browsed the Linen Collection page — 3 sold-out shirts sitting in the top 6 positions. New arrivals buried below older inventory."></textarea>
+    </div>
+
+    <div class="field">
+      <label>Other context <span style="font-weight:400;color:var(--text-secondary)">(optional)</span></label>
+      <div class="hint">Catalog size, brand category, spend signals, anything else useful.</div>
+      <textarea id="other-obs" rows="2" placeholder="e.g. Premium menswear brand, ~150 SKUs, running Meta + Google DPA. Heavy reliance on catalog ads for new customer acquisition."></textarea>
+    </div>
+  </div>
+
+  <!-- STEP 3: Options -->
+  <div class="card">
+    <div class="step-header">
+      <div class="step-num">3</div>
+      <div class="step-title">Platform, product & role</div>
+    </div>
+
+    <div class="field">
+      <label>Platform</label>
+      <div class="pills" id="pills-platform">
+        <div class="pill active" data-val="WhatsApp">WhatsApp</div>
+        <div class="pill" data-val="Email">Email</div>
+        <div class="pill" data-val="Instagram DM">Instagram DM</div>
+        <div class="pill" data-val="LinkedIn DM">LinkedIn DM</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Merca product to position</label>
+      <div class="pills" id="pills-product">
+        <div class="pill active" data-val="Feed Management">Feed Management</div>
+        <div class="pill" data-val="Data Cube">Data Cube</div>
+        <div class="pill" data-val="Sorting Tool">Sorting Tool</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Recipient role</label>
+      <div class="pills" id="pills-role">
+        <div class="pill active" data-val="Founder">Founder</div>
+        <div class="pill" data-val="E-com Head">E-com Head</div>
+        <div class="pill" data-val="Performance Marketing Lead">Perf. Marketing</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Outreach stage</label>
+      <div class="pills" id="pills-stage">
+        <div class="pill active" data-val="Initial outreach">Initial outreach</div>
+        <div class="pill" data-val="Follow-up (no reply yet)">Follow-up</div>
+        <div class="pill" data-val="Post-meeting follow-up">Post-meeting</div>
+        <div class="pill" data-val="Trial or closing stage">Trial / Closing</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GENERATE -->
+  <div class="btn-row">
+    <button class="btn primary" id="gen-btn" onclick="generate()">Generate message</button>
+    <button class="btn sm" onclick="clearAll()">Clear all</button>
+  </div>
+
+  <div id="error-area"></div>
+  <div id="output-area"></div>
+
+</div>
+
+<div class="footer">
+  Merca &mdash; merca.ai &nbsp;·&nbsp; Gurugram, New Delhi 122002 &nbsp;·&nbsp; hello@merca.ai
+</div>
+
+<script>
+const SYSTEM = `You are Rohit from Merca, a D2C performance marketing intelligence platform based in Gurugram, India.
+You write outreach messages to fashion/apparel brand founders and e-com heads.
+
+Merca's three products:
+- Feed Management: automatically suppresses DPA (Dynamic Product Ads) SKUs with low or broken size availability in real time, at the variant level. No manual rules needed. Pays for itself in recovered ad spend within the first billing cycle.
+- Data Cube: connects Meta Ads, Google Ads, GA4, and Shopify into a single SKU-level report. Shows spend per Product ID alongside on-site behaviour and revenue. Not a GA4 wrapper.
+- Sorting Tool: gives merchandisers full control over Shopify collection page sort logic without any dev work. Eliminates OOS products from top positions. Used for campaign landing pages, seasonal drops, and ongoing merchandising.
+
+Writing rules you always follow:
+1. Lead with a specific, verifiable observation from their actual brand — never a generic opener.
+2. Translate everything into rupee cost or revenue language — never technical feature jargon.
+3. Never pitch the product by name in the first message — show the problem first, let them feel the pain.
+4. For WhatsApp: write as 2 separate short messages. Message 1 = the observation hook. Message 2 = the cost implication + one question. Keep each message under 60 words.
+5. For Email: subject line must reference the specific product or finding from their brand. Body under 180 words. Short paragraphs, no bullet points in the opening email.
+6. Never start with "I noticed" or "I wanted to reach out" — too generic and get ignored.
+7. Sound like a peer sharing a finding, not a vendor selling a product.
+8. End with one open question or a low-friction offer (e.g. "want me to run a snapshot?") — never a hard CTA.
+9. Do not use the word "Merca" in an initial outreach message unless it's a follow-up or post-meeting stage.
+10. For WhatsApp messages, never use formal salutations. Start with "Hey [Name]" or the observation directly.`;
+
+function getSelected(groupId) {
+  const active = document.querySelector(`#${groupId} .pill.active`);
+  return active ? active.dataset.val : '';
+}
+
+document.querySelectorAll('.pills').forEach(group => {
+  group.querySelectorAll('.pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      group.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+    });
+  });
+});
+
+function saveKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  if (key.startsWith('sk-ant-')) {
+    localStorage.setItem('anthropic_key', key);
+    const saved = document.getElementById('key-saved');
+    saved.style.display = 'inline';
+    setTimeout(() => saved.style.display = 'none', 2000);
+  }
+}
+
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem('anthropic_key');
+  if (saved) {
+    document.getElementById('api-key-input').value = saved;
+    document.getElementById('api-banner').style.background = '#f0fdf4';
+    document.getElementById('api-banner').style.borderBottomColor = '#6ee7b7';
+  }
+});
+
+function getApiKey() {
+  return document.getElementById('api-key-input').value.trim() ||
+         localStorage.getItem('anthropic_key') || '';
+}
+
+function clearAll() {
+  ['brand-name','website','contact-name','ad-obs','site-obs','other-obs'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('output-area').innerHTML = '';
+  document.getElementById('error-area').innerHTML = '';
+}
+
+async function callClaude(messages, maxTokens = 900) {
+  const apiKey = getApiKey();
+  if (!apiKey) throw new Error('No API key. Enter your Anthropic API key at the top of the page.');
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: maxTokens,
+      system: SYSTEM,
+      messages
+    })
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || `API error ${res.status}`);
+  }
+
+  const data = await res.json();
+  return data.content?.find(b => b.type === 'text')?.text || '';
+}
+
+async function generate() {
+  const brandName   = document.getElementById('brand-name').value.trim();
+  const website     = document.getElementById('website').value.trim();
+  const contactName = document.getElementById('contact-name').value.trim();
+  const adObs       = document.getElementById('ad-obs').value.trim();
+  const siteObs     = document.getElementById('site-obs').value.trim();
+  const otherObs    = document.getElementById('other-obs').value.trim();
+
+  const platform = getSelected('pills-platform');
+  const product  = getSelected('pills-product');
+  const role     = getSelected('pills-role');
+  const stage    = getSelected('pills-stage');
+
+  document.getElementById('error-area').innerHTML = '';
+
+  if (!brandName) {
+    document.getElementById('error-area').innerHTML =
+      '<div class="error-box">Please enter the brand name.</div>';
+    return;
+  }
+  if (!adObs) {
+    document.getElementById('error-area').innerHTML =
+      '<div class="error-box">Please describe what you observed in their ads or on the site.</div>';
+    return;
+  }
+
+  const btn = document.getElementById('gen-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Generating...';
+
+  const prompt = `Write a personalized ${platform} outreach message.
+
+Brand: ${brandName}
+Website: ${website || 'not provided'}
+Contact name: ${contactName || 'not provided'}
+Platform: ${platform}
+Product to eventually position: ${product}
+Recipient role: ${role}
+Outreach stage: ${stage}
+
+Research collected:
+AD / DPA OBSERVATIONS: ${adObs}
+WEBSITE / COLLECTION OBSERVATIONS: ${siteObs || 'nothing noted'}
+OTHER CONTEXT: ${otherObs || 'none'}
+
+Output format rules (follow exactly):
+- WhatsApp: Two messages. Label them exactly "Message 1:" and "Message 2:" on separate lines. Each message under 60 words. Conversational, no formal salutation.
+- Email: First line = "Subject: [subject]". Blank line. Then the email body. Body under 180 words. No bullet points in opener.
+- Instagram DM / LinkedIn DM: Single message under 80 words. No subject line.
+
+Return ONLY the message text. No explanation, no preamble, no quotes around it.`;
+
+  try {
+    const text = await callClaude([{ role: 'user', content: prompt }]);
+    if (!text) throw new Error('Empty response received.');
+
+    const wordCount = text.trim().split(/\s+/).length;
+
+    document.getElementById('output-area').innerHTML = `
+      <div class="output-card">
+        <div class="output-top">
+          <div>
+            <div class="output-badge">${platform} · ${brandName}</div>
+          </div>
+          <div class="output-actions">
+            <span style="font-size:12px;color:#9ca3af">${wordCount} words</span>
+            <button class="copy-btn" id="copy-btn" onclick="copyMsg(this)">Copy message</button>
+          </div>
+        </div>
+        <div class="message-body" id="msg-body">${esc(text)}</div>
+        <div class="refine-row">
+          <span style="font-size:12px;color:#9ca3af;margin-right:4px">Refine:</span>
+          <button class="refine-btn" onclick="refine('make it shorter and punchier, cut anything generic')">Shorter</button>
+          <button class="refine-btn" onclick="refine('make the opening hook more specific and bold — lead harder with the exact finding')">Sharper hook</button>
+          <button class="refine-btn" onclick="refine('add more urgency — make the cost of inaction clearer in rupee terms')">Add urgency</button>
+          <button class="refine-btn" onclick="refine('make it sound more casual and conversational, less formal')">More casual</button>
+          <button class="refine-btn" onclick="generate()">Regenerate</button>
+        </div>
+      </div>`;
+  } catch (e) {
+    document.getElementById('error-area').innerHTML =
+      `<div class="error-box">${esc(e.message)}</div>`;
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = 'Generate message';
+}
+
+async function refine(instruction) {
+  const current = document.getElementById('msg-body')?.innerText?.trim();
+  if (!current) return;
+
+  const brandName = document.getElementById('brand-name').value.trim();
+  const btn = document.getElementById('gen-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Refining...';
+
+  try {
+    const text = await callClaude([{
+      role: 'user',
+      content: `Here is an outreach message for ${brandName}:\n\n${current}\n\nInstruction: ${instruction}\n\nReturn ONLY the revised message. No explanation.`
+    }]);
+    if (text) {
+      document.getElementById('msg-body').innerText = text;
+      const wc = text.trim().split(/\s+/).length;
+      document.querySelector('.output-card .output-actions span').textContent = `${wc} words`;
+    }
+  } catch(e) {
+    document.getElementById('error-area').innerHTML =
+      `<div class="error-box">${esc(e.message)}</div>`;
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = 'Generate message';
+}
+
+function copyMsg(btn) {
+  const text = document.getElementById('msg-body')?.innerText || '';
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'Copy message';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/\n/g,'<br>');
+}
+</script>
+</body>
+</html>
